@@ -38,8 +38,7 @@ export class BioRepository {
       content,
       is_published: isPublished,
     } as any);
-    const r = await this.model.findOne({ where: { locale } });
-    if (!r) throw new Error('upsert failed');
+    const r = await this.model.findOneOrThrow({ where: { locale } });
     return {
       locale: r.locale,
       content: r.content,

@@ -11,5 +11,8 @@ ENV NODE_ENV=production
 COPY package.json package-lock.json* ./
 RUN npm ci --omit=dev
 COPY --from=builder /app/dist ./dist
+COPY sequelize.config.cjs .sequelizerc ./
+COPY migrations ./migrations
+COPY scripts ./scripts
 EXPOSE 3000
 CMD ["node", "dist/main.js"]

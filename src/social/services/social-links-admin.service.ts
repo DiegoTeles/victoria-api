@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import { RecordNotFoundError } from '../../database/models/base.model';
 import { SocialLinksRepository } from '../repositories/social-links.repository';
 
 @Injectable()
@@ -66,7 +67,6 @@ export class SocialLinksAdminService {
         sort_order: sortOrder,
         is_active: isActive,
       });
-      if (!r) throw new NotFoundException('Not found');
       return {
         id: String(r.id),
         network: r.network,
@@ -77,6 +77,7 @@ export class SocialLinksAdminService {
         updatedAt: r.updatedAt,
       };
     } catch (e) {
+      if (e instanceof RecordNotFoundError) throw e;
       if (e instanceof NotFoundException) throw e;
       throw new InternalServerErrorException('Failed to update social link');
     }

@@ -1,7 +1,6 @@
 import {
   Table,
   Column,
-  Model,
   DataType,
   PrimaryKey,
   Default,
@@ -10,11 +9,12 @@ import {
   BelongsTo,
 } from 'sequelize-typescript';
 import { Artwork } from './artwork.model';
+import { BaseModel } from './base.model';
 import { Category } from './category.model';
 import { Subcategory } from './subcategory.model';
 
 @Table({ tableName: 'artwork_categories', underscored: true, timestamps: false })
-export class ArtworkCategory extends Model {
+export class ArtworkCategory extends BaseModel {
   @PrimaryKey
   @Default(DataType.UUIDV4)
   @IsUUID(4)

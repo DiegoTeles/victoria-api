@@ -1,7 +1,8 @@
-import { Table, Column, Model, DataType, PrimaryKey, Default, IsUUID } from 'sequelize-typescript';
+import { Table, Column, DataType, PrimaryKey, Default, IsUUID } from 'sequelize-typescript';
+import { BaseModel } from './base.model';
 
 @Table({ tableName: 'social_links', underscored: true, createdAt: false, updatedAt: 'updated_at' })
-export class SocialLink extends Model {
+export class SocialLink extends BaseModel {
   @PrimaryKey
   @Default(DataType.UUIDV4)
   @IsUUID(4)

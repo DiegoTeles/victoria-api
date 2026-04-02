@@ -156,6 +156,18 @@ export function rowToArtwork(row: ArtworkRow, categoryAssignments?: CategoryAssi
   return base;
 }
 
+function normalizeTitleField(raw: unknown): string {
+  if (raw == null) return '';
+  if (typeof raw === 'string') return raw.trim();
+  if (typeof raw === 'object' && !Array.isArray(raw)) {
+    const o = raw as Record<string, unknown>;
+    const v =
+      o['pt-Br'] ?? o.en ?? o.fr ?? o.it ?? o.de ?? Object.values(o).find((x) => typeof x === 'string');
+    return typeof v === 'string' ? v.trim() : '';
+  }
+  return String(raw).trim();
+}
+
 export function bodyToInsertPayload(body: Record<string, unknown>) {
   const types = Array.isArray(body.types) ? body.types : [];
   const description =
@@ -208,7 +220,7 @@ export function bodyToInsertPayload(body: Record<string, unknown>) {
     order_index: Number.isFinite(Number(body.order_index))
       ? Number(body.order_index)
       : Number(body.order) || 0,
-    title: String(body.title ?? ''),
+    title: normalizeTitleField(body.title),
     artwork_date: String(body.date || body.artwork_date || '').slice(0, 10),
     description,
     caption_medium,

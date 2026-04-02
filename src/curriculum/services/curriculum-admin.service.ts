@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable, InternalServerErrorException } from '@nestjs/common';
+import { RecordNotFoundError } from '../../database/models/base.model';
 import { CurriculumRepository } from '../repositories/curriculum.repository';
 
 const LOCALES = new Set(['pt-Br', 'en', 'fr', 'it', 'de']);
@@ -20,7 +21,8 @@ export class CurriculumAdminService {
     const isPublished = Boolean(body.isPublished);
     try {
       return await this.curriculumRepository.upsertLocale(locale, content, isPublished);
-    } catch {
+    } catch (e) {
+      if (e instanceof RecordNotFoundError) throw e;
       throw new InternalServerErrorException('Failed to save curriculum');
     }
   }

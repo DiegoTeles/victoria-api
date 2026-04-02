@@ -104,12 +104,12 @@ export class CategoriesRepository {
       byCat.set(k, list);
     }
     return cats.map((c) => {
-      const plain = c.get({ plain: true }) as {
+      const plain = c.plain<{
         id: string;
         slug: string;
         sort_order: number;
         is_active: boolean;
-      };
+      }>();
       return {
         id: String(plain.id),
         slug: plain.slug,
@@ -153,8 +153,7 @@ export class CategoriesRepository {
     const sortOrder = Number.isFinite(Number(body.sortOrder)) ? Number(body.sortOrder) : 0;
     const isActive = body.isActive !== false;
     const translations = normalizeTranslations(body.translations);
-    const existing = await this.categoryModel.findByPk(id);
-    if (!existing) return null;
+    const existing = await this.categoryModel.findByPkOrThrow(id);
     if (!slug) slug = existing.slug;
     await existing.update({
       slug,
@@ -168,13 +167,12 @@ export class CategoriesRepository {
         name: t.name || slug,
       } as any);
     }
-    const c = await this.categoryModel.findByPk(id);
-    if (!c) return null;
+    await existing.reload();
     return {
-      id: String(c.id),
-      slug: c.slug,
-      sortOrder: c.sort_order,
-      isActive: c.is_active,
+      id: String(existing.id),
+      slug: existing.slug,
+      sortOrder: existing.sort_order,
+      isActive: existing.is_active,
       translations,
     };
   }
@@ -253,13 +251,13 @@ export class CategoriesRepository {
       bySub.set(k, list);
     }
     return subs.map((s) => {
-      const plain = s.get({ plain: true }) as {
+      const plain = s.plain<{
         id: string;
         category_id: string;
         slug: string;
         sort_order: number;
         is_active: boolean;
-      };
+      }>();
       return {
         id: String(plain.id),
         categoryId: String(plain.category_id),
@@ -311,8 +309,7 @@ export class CategoriesRepository {
       body.categoryId != null && body.categoryId !== ''
         ? String(body.categoryId).trim()
         : null;
-    const existing = await this.subModel.findByPk(id);
-    if (!existing) return null;
+    const existing = await this.subModel.findByPkOrThrow(id);
     if (!slug) slug = existing.slug;
     const categoryIdForRow = nextCategoryId || String(existing.category_id);
     await existing.update({
@@ -328,14 +325,13 @@ export class CategoriesRepository {
         name: t.name || slug,
       } as any);
     }
-    const s = await this.subModel.findByPk(id);
-    if (!s) return null;
+    await existing.reload();
     return {
-      id: String(s.id),
-      categoryId: String(s.category_id),
-      slug: s.slug,
-      sortOrder: s.sort_order,
-      isActive: s.is_active,
+      id: String(existing.id),
+      categoryId: String(existing.category_id),
+      slug: existing.slug,
+      sortOrder: existing.sort_order,
+      isActive: existing.is_active,
       translations,
     };
   }

@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { InjectConnection } from '@nestjs/sequelize';
 import { Sequelize } from 'sequelize';
-import { UniqueConstraintError } from 'sequelize';
+import { ForeignKeyConstraintError, UniqueConstraintError } from 'sequelize';
 import { ArtworksRepository } from '../repositories/artworks.repository';
 import { ArtworkCategoriesRepository } from '../repositories/artwork-categories.repository';
 import { bodyToInsertPayload, rowToArtwork, type ArtworkRow } from '../artwork.mapper';
@@ -23,6 +23,9 @@ export class ArtworksAdminCreateService {
     const p = bodyToInsertPayload(body);
     if (!p.id || !p.artwork_date) {
       throw new BadRequestException('id and date are required');
+    }
+    if (!p.title) {
+      throw new BadRequestException('title is required');
     }
     const payload = {
       ...p,
@@ -48,12 +51,28 @@ export class ArtworksAdminCreateService {
         }
       });
     } catch (e) {
-      if (e instanceof UniqueConstraintError) {
-        throw new ConflictException('Artwork id already exists');
+      if (e instanceof BadRequestException) {
+        throw e;
       }
-      throw e instanceof BadRequestException
-        ? e
-        : new InternalServerErrorException('Failed to create artwork');
+      if (e instanceof ForeignKeyConstraintError) {
+        throw new BadRequestException(
+          'Categoria, subcategoria ou referência inválida. Confirma que as categorias existem na base de dados.',
+        );
+      }
+      if (e instanceof UniqueConstraintError) {
+        const parentMsg =
+          e.parent && typeof e.parent === 'object' && 'message' in e.parent
+            ? String((e.parent as { message?: string }).message ?? '')
+            : '';
+        const hint = `${e.message} ${parentMsg}`;
+        if (/artwork_categories|idx_artwork_categories/i.test(hint)) {
+          throw new BadRequestException(
+            'Combinação de categoria/subcategoria duplicada para esta obra.',
+          );
+        }
+        throw new ConflictException('Já existe uma obra com este id.');
+      }
+      throw e;
     }
     const row = await this.artworksRepository.findById(p.id);
     if (!row) throw new InternalServerErrorException('Failed to create artwork');

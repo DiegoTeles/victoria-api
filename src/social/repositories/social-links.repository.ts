@@ -45,10 +45,10 @@ export class SocialLinksRepository {
       is_active: boolean;
     },
   ) {
-    const row = await this.model.findByPk(id);
-    if (!row) return null;
+    const row = await this.model.findByPkOrThrow(id);
     await row.update(values);
-    return this.model.findByPk(id);
+    await row.reload();
+    return row;
   }
 
   async deleteById(id: string): Promise<boolean> {

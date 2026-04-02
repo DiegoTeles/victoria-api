@@ -5,6 +5,7 @@ import {
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
+import { RecordNotFoundError } from '../../database/models/base.model';
 import { UniqueConstraintError } from 'sequelize';
 import { CategoriesRepository } from '../repositories/categories.repository';
 
@@ -32,10 +33,9 @@ export class CategoriesAdminService {
 
   async updateCategory(id: string, body: Record<string, unknown>) {
     try {
-      const r = await this.categoriesRepository.updateCategory(id, body);
-      if (!r) throw new NotFoundException('Not found');
-      return r;
+      return await this.categoriesRepository.updateCategory(id, body);
     } catch (e) {
+      if (e instanceof RecordNotFoundError) throw e;
       if (e instanceof NotFoundException) throw e;
       if (e instanceof UniqueConstraintError) {
         throw new ConflictException('Slug already exists');
@@ -71,10 +71,9 @@ export class CategoriesAdminService {
 
   async updateSubcategory(id: string, body: Record<string, unknown>) {
     try {
-      const r = await this.categoriesRepository.updateSubcategory(id, body);
-      if (!r) throw new NotFoundException('Not found');
-      return r;
+      return await this.categoriesRepository.updateSubcategory(id, body);
     } catch (e) {
+      if (e instanceof RecordNotFoundError) throw e;
       if (e instanceof NotFoundException) throw e;
       if (e instanceof UniqueConstraintError) {
         throw new ConflictException('Slug already exists in this category');

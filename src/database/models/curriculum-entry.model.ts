@@ -1,7 +1,8 @@
-import { Table, Column, Model, DataType, PrimaryKey, Default, IsUUID } from 'sequelize-typescript';
+import { Table, Column, DataType, PrimaryKey, Default, IsUUID } from 'sequelize-typescript';
+import { BaseModel } from './base.model';
 
 @Table({ tableName: 'curriculum_entries', underscored: true, createdAt: false, updatedAt: 'updated_at' })
-export class CurriculumEntry extends Model {
+export class CurriculumEntry extends BaseModel {
   @PrimaryKey
   @Default(DataType.UUIDV4)
   @IsUUID(4)

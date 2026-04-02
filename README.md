@@ -31,7 +31,7 @@ cp .env.example .env
 | `UPLOAD_DIR` | Diretório de ficheiros enviados (relativo ao cwd ou caminho absoluto) |
 | `SPA_INDEX_PATH` | Caminho para `index.html` do build do front (Open Graph dinâmico) |
 
-3. Instale dependências e execute as migrações:
+3. Instale dependências e execute as migrações (única fonte de esquema; o front `vic-portifolio` não traz SQL legado):
 
 ```bash
 npm install
@@ -45,6 +45,22 @@ npm run start:dev
 ```
 
 A API fica em `http://localhost:3000` (ou na porta definida em `PORT`). O prefixo global das rotas é `/api`.
+
+### Primeiro acesso ao admin
+
+Não existe utilizador na base de dados: a palavra-passe do painel é só a variável **`ADMIN_PASSWORD`** no `.env`. No front, abre **`/admin`** (ex.: `http://localhost:5173/admin` com o proxy do Vite) e introduz essa palavra-passe.
+
+Para testar só a API (recebe o cookie `portfolio_admin`):
+
+```bash
+curl -c jar.txt -X POST http://localhost:3000/api/admin/login \
+  -H "Content-Type: application/json" \
+  -d "{\"password\":\"A_TUA_ADMIN_PASSWORD\"}"
+
+curl -b jar.txt http://localhost:3000/api/admin/me
+```
+
+Em produção, usa `ADMIN_PASSWORD` e `JWT_SECRET` fortes e nunca commits o `.env`.
 
 ## Scripts
 
@@ -75,7 +91,23 @@ Com o servidor em execução: **Swagger UI** em `/docs` (relativo à raiz da app
 
 ## Docker e produção
 
-O repositório inclui um exemplo de stack com Postgres, API e proxy Caddy em `../deploy/` (Docker Compose). Consulte `deploy/env.example` e monte o build estático do front onde o compose espera, conforme descrito nessa pasta.
+### Compose nesta pasta (`docker-compose.yml`)
+
+Na raiz de `vic-api`, sobe **Postgres + API na mesma rede** (`vic_internal`). O hostname `postgres` só existe aí dentro.
+
+```bash
+docker compose up --build -d
+```
+
+O serviço **`migrate`** corre `sequelize-cli db:migrate` e, em seguida, confirma que existem as tabelas `artworks` e `categories`; se faltar esquema, o container falha e a API não arranca. Reconstrói a imagem com `docker compose build --no-cache` se tiveres alterado migrações. Em desenvolvimento no host, após criar a BD: `npm run db:migrate`.
+
+**Erro `getaddrinfo ENOTFOUND postgres`:** a API usa host `postgres`, mas o container **não** está na rede desse Compose (ex.: `docker run` só da imagem, ou Postgres ausente). Corrige com uma destas opções:
+
+- Arrancar **postgres + api** com este `docker compose up` na pasta `vic-api`, **ou**
+- Postgres no **host** e API no Docker: em `DATABASE_URL` usa `host.docker.internal` (Docker Desktop Windows/macOS) em vez de `postgres`, **ou**
+- API no host com `npm run start:dev`: em `.env` usa `localhost` no `DATABASE_URL`, não `postgres`.
+
+Stack com Caddy e front: `../deploy/` e `deploy/env.example`.
 
 ## Licença
 

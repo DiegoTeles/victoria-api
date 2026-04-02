@@ -1,16 +1,16 @@
 import {
   Table,
   Column,
-  Model,
   DataType,
   ForeignKey,
   BelongsTo,
   PrimaryKey,
 } from 'sequelize-typescript';
+import { BaseModel } from './base.model';
 import { Subcategory } from './subcategory.model';
 
 @Table({ tableName: 'subcategory_translations', underscored: true, timestamps: false })
-export class SubcategoryTranslation extends Model {
+export class SubcategoryTranslation extends BaseModel {
   @PrimaryKey
   @ForeignKey(() => Subcategory)
   @Column(DataType.UUID)

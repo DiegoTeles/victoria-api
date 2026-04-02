@@ -1,24 +1,48 @@
+name: vic-portfolio-api
+
 services:
   postgres:
     image: postgres:16-alpine
+    restart: unless-stopped
     environment:
       POSTGRES_USER: vic
       POSTGRES_PASSWORD: vic
       POSTGRES_DB: vic
     ports:
-      - "5432:5432"
+      - '5432:5432'
     volumes:
       - vic_pg_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U vic -d vic"]
+      test: ['CMD-SHELL', 'pg_isready -U vic -d vic']
       interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 10
+      start_period: 10s
+    networks:
+      - vic_internal
+
+  migrate:
+    build: .
+    environment:
+      DATABASE_URL: postgres://vic:vic@postgres:5432/vic
+    command:
+      [
+        'sh',
+        '-c',
+        'npx sequelize-cli db:migrate && node scripts/verify-db-schema.cjs',
+      ]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - vic_internal
+    restart: 'no'
 
   api:
     build: .
+    restart: unless-stopped
     ports:
-      - "3000:3000"
+      - '3000:3000'
     environment:
       NODE_ENV: production
       PORT: 3000
@@ -26,10 +50,21 @@ services:
       DATABASE_URL: postgres://vic:vic@postgres:5432/vic
       JWT_SECRET: ${JWT_SECRET:-dev-secret-change-me}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-dev-password}
-      BLOB_READ_WRITE_TOKEN: ${BLOB_READ_WRITE_TOKEN:-}
+      UPLOAD_DIR: /data/uploads
+    volumes:
+      - vic_uploads:/data/uploads
     depends_on:
       postgres:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    networks:
+      - vic_internal
 
 volumes:
   vic_pg_data:
+  vic_uploads:
+
+networks:
+  vic_internal:
+    driver: bridge

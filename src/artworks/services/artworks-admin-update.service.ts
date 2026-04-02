@@ -1,11 +1,6 @@
-import {
-  BadRequestException,
-  Injectable,
-  InternalServerErrorException,
-  NotFoundException,
-} from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectConnection } from '@nestjs/sequelize';
-import { Sequelize } from 'sequelize';
+import { ForeignKeyConstraintError, Sequelize, UniqueConstraintError } from 'sequelize';
 import { ArtworksRepository } from '../repositories/artworks.repository';
 import { ArtworkCategoriesRepository } from '../repositories/artwork-categories.repository';
 import { bodyToInsertPayload, rowToArtwork, type ArtworkRow } from '../artwork.mapper';
@@ -46,9 +41,27 @@ export class ArtworksAdminUpdateService {
         }
       });
     } catch (e) {
-      throw e instanceof BadRequestException
-        ? e
-        : new InternalServerErrorException('Failed to update artwork');
+      if (e instanceof BadRequestException) {
+        throw e;
+      }
+      if (e instanceof ForeignKeyConstraintError) {
+        throw new BadRequestException(
+          'Categoria, subcategoria ou referência inválida. Confirma que as categorias existem na base de dados.',
+        );
+      }
+      if (e instanceof UniqueConstraintError) {
+        const parentMsg =
+          e.parent && typeof e.parent === 'object' && 'message' in e.parent
+            ? String((e.parent as { message?: string }).message ?? '')
+            : '';
+        const hint = `${e.message} ${parentMsg}`;
+        if (/artwork_categories|idx_artwork_categories/i.test(hint)) {
+          throw new BadRequestException(
+            'Combinação de categoria/subcategoria duplicada para esta obra.',
+          );
+        }
+      }
+      throw e;
     }
     const row = await this.artworksRepository.findById(id);
     if (!row) throw new NotFoundException('Not found');

@@ -25,7 +25,13 @@ function normalizeAssignments(body: Record<string, unknown>): CategoryAssignment
       subRaw === null || subRaw === undefined || subRaw === '' ? null : String(subRaw).trim();
     out.push({ categoryId, subcategoryId });
   }
-  return out;
+  const seen = new Set<string>();
+  return out.filter((a) => {
+    const key = `${a.categoryId}|${a.subcategoryId ?? ''}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 }
 
 @Injectable()

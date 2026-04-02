@@ -23,6 +23,10 @@ function buildConfig() {
 }
 
 module.exports = {
-  development: buildConfig(),
-  production: buildConfig(),
+  get development() {
+    return buildConfig();
+  },
+  get production() {
+    return buildConfig();
+  },
 };

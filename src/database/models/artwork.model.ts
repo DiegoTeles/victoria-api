@@ -1,15 +1,9 @@
-import {
-  Table,
-  Column,
-  Model,
-  DataType,
-  PrimaryKey,
-  HasMany,
-} from 'sequelize-typescript';
+import { Table, Column, DataType, PrimaryKey, HasMany } from 'sequelize-typescript';
 import { ArtworkCategory } from './artwork-category.model';
+import { BaseModel } from './base.model';
 
 @Table({ tableName: 'artworks', underscored: true })
-export class Artwork extends Model {
+export class Artwork extends BaseModel {
   @PrimaryKey
   @Column(DataType.STRING)
   declare id: string;
